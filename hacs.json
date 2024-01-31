@@ -1,5 +1,5 @@
 {
-    "name": "iNELS to MQTT - dev (Developing purposes)",
+    "name": "iNELS to MQTT (epdevlab)",
     "hacs": "1.6.0",
     "homeassistant": "0.118.0",
     "render_readme": true
