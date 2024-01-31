@@ -22,6 +22,7 @@ from inelsmqtt.const import (
     GBP3_60,
     IDRT3_1,
     JA3_018M,
+    JA3_014M,
 )
 
 from homeassistant.components.button import (
@@ -131,6 +132,13 @@ INELS_BUTTON_INTERFACE: dict[str, list[InelsButtonType]] = {
             icon=ICON_UP if i % 2 == 0 else ICON_DOWN,
         )
         for i in range(18)
+    ],
+    JA3_014M: [
+        InelsButtonType(
+            name=f"Switch {UP_DOWN[i % 2]} {int(i / 2) + 1}",
+            icon=ICON_UP if i % 2 == 0 else ICON_DOWN,
+        )
+        for i in range(14)
     ],
 }
 

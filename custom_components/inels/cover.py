@@ -149,6 +149,16 @@ class InelsCover(InelsBaseEntity, CoverEntity):
         return ICON_SHUTTER_CLOSED if self.is_closed is True else ICON_SHUTTER_OPEN
 
     @property
+    def is_opening(self) -> bool | None:
+        """Is the cover opening ?"""
+        return self._device.state.__dict__[self.key][self.index].state == Shutter_state.Open
+
+    @property
+    def is_closing(self) -> bool | None:
+        """Is the cover closing ?"""
+        return self._device.state.__dict__[self.key][self.index].state == Shutter_state.Closed
+
+    @property
     def is_closed(self) -> bool | None:
         """Cover is closed."""
         # is_closed = (
