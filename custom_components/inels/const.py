@@ -21,6 +21,7 @@ DEFAULT_MAX_TEMP = 50.0  # °C
 
 ICON_TEMPERATURE = "mdi:thermometer"
 ICON_BATTERY = "mdi:battery"
+ICON_NUMBER = "mdi:ray-vertex"
 ICON_SWITCH = "mdi:power-socket-eu"
 ICON_LIGHT = "mdi:lightbulb"
 ICON_SHUTTER_CLOSED = "mdi:window-shutter"

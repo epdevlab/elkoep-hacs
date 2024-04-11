@@ -94,6 +94,10 @@ Platform | Description
 - Virtual controller (166)
 - Virtual heating regulator (167)
 - Virtual cooling regulator (168)
+- SA3_014M (169)
+- JA3_014M (170)
+- BITS (bits)
+- INTEGETS (integers)
 
 [iNELS_icon]: https://www.inels.com/media/img/logo.png
 [iNELS]: https://www.inels.com/

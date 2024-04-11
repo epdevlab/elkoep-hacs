@@ -16,6 +16,7 @@ from .const import BROKER, BROKER_CONFIG, DEVICES, DOMAIN, LOGGER, OLD_ENTITIES
 PLATFORMS: list[Platform] = [
     Platform.BUTTON,
     Platform.SWITCH,
+    Platform.NUMBER,
     Platform.LIGHT,
     Platform.COVER,
     Platform.SENSOR,

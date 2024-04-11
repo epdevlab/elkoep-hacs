@@ -46,6 +46,7 @@ class InelsSwitchType:
 
 
 INELS_SWITCH_TYPES: dict[str, InelsSwitchType] = {
+    "bit": InelsSwitchType(),
     "simple_relay": InelsSwitchType(),
     "relay": InelsSwitchType(alerts=[relay_overflow]),
 }
@@ -83,17 +84,22 @@ async def async_setup_entry(
                     )
                 else:
                     for k in range(len(device.state.__dict__[key])):
+                        description=InelsSwitchEntityDescription(
+                            key=f"{key}{k}",
+                            name=f"{type_dict.name} {k+1}",
+                            icon=type_dict.icon,
+                            overload_key=type_dict.overflow,
+                        )
+
+                        if device.inels_type == 'BITS':
+                            description.name = f"Bit {device.state.__dict__[key][k].addr}"
+
                         entities.append(
                             InelsBusSwitch(
                                 device=device,
                                 key=key,
                                 index=k,
-                                description=InelsSwitchEntityDescription(
-                                    key=f"{key}{k}",
-                                    name=f"{type_dict.name} {k+1}",
-                                    icon=type_dict.icon,
-                                    overload_key=type_dict.overflow,
-                                ),
+                                description=description,
                             )
                         )
     async_add_entities(entities, False)
