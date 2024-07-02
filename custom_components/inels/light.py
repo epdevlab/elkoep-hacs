@@ -9,6 +9,7 @@ from homeassistant.components.light import (
     ATTR_BRIGHTNESS,
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
+    ATTR_RGBW_COLOR,
     ATTR_TRANSITION,
     ColorMode,
     LightEntity,
@@ -90,6 +91,9 @@ INELS_LIGHT_TYPES: dict[str, InelsLightType] = {
     ),
     "rgb": InelsLightType(
         name="RGB light", color_modes=[ColorMode.BRIGHTNESS, ColorMode.RGB]
+    ),
+    "rgbw": InelsLightType(
+        name="RGBW light", color_modes=[ColorMode.BRIGHTNESS, ColorMode.RGBW]
     ),
     "warm_light": InelsLightType(
         name="Tunable white light",
@@ -236,6 +240,13 @@ class InelsLight(InelsBaseEntity, LightEntity):
         return None
 
     @property
+    def rgbw_color(self) -> tuple[int, int, int, int] | None:
+        state = self._device.state.__dict__[self.key][self.index]
+        if hasattr(state, "w"):
+            return tuple(int(i * 2.55) for i in (state.r, state.g, state.b, state.w))
+        return None
+
+    @property
     def color_temp_kelvin(self) -> int | None:
         state = self._device.state.__dict__[self.key][self.index]
         if hasattr(state, "relative_ct"):
@@ -249,6 +260,8 @@ class InelsLight(InelsBaseEntity, LightEntity):
     @property
     def color_mode(self) -> ColorMode | str | None:
         state = self._device.state.__dict__[self.key][self.index]
+        if hasattr(state, "w"):
+            return ColorMode.RGBW
         if hasattr(state, "r"):
             return ColorMode.RGB
         if hasattr(state, "relative_ct"):
@@ -283,6 +296,13 @@ class InelsLight(InelsBaseEntity, LightEntity):
             ha_val.__dict__[self.key][self.index].r = rgb[0]
             ha_val.__dict__[self.key][self.index].g = rgb[1]
             ha_val.__dict__[self.key][self.index].b = rgb[2]
+        elif ATTR_RGBW_COLOR in kwargs:
+            rgbw = kwargs[ATTR_RGBW_COLOR]
+
+            ha_val.__dict__[self.key][self.index].r = int(rgbw[0] / 2.55)
+            ha_val.__dict__[self.key][self.index].g = int(rgbw[1] / 2.55)
+            ha_val.__dict__[self.key][self.index].b = int(rgbw[2] / 2.55)
+            ha_val.__dict__[self.key][self.index].w = int(rgbw[3] / 2.55)
         elif ATTR_BRIGHTNESS in kwargs:
             brightness = int(kwargs[ATTR_BRIGHTNESS] / 2.55)
             brightness = min(brightness, 100)

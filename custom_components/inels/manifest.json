@@ -8,6 +8,6 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/epdevlab/elkoep-hacs/issues",
   "mqtt": ["inels/status/#"],
-  "requirements": ["elkoep-mqtt==0.2.33b2"],
-  "version": "0.1.0-b2"
+  "requirements": ["elkoep-mqtt==0.2.33b3"],
+  "version": "0.1.0-b3"
 }
