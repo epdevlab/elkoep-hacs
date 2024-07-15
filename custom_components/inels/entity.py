@@ -40,7 +40,11 @@ class InelsBaseEntity(Entity):
 
     def _callback(self) -> None:
         """Get data from broker into the HA."""
-        self.schedule_update_ha_state()
+        if hasattr(self, 'hass'):
+            try:
+                self.schedule_update_ha_state()
+            except Exception as e:
+                LOGGER.error("schedule_update_ha_state DT_%s, %s, %s", self._device.device_class, self._device.info_serialized(), e)
 
     @property
     def should_poll(self) -> bool:
