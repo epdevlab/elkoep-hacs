@@ -18,9 +18,9 @@
     "inels/status/#"
   ],
   "requirements": [
-    "elkoep-mqtt==0.2.33b7"
+    "elkoep-mqtt==0.2.33b8"
   ],
-  "version": "0.1.0-b7",
+  "version": "0.1.0-b8",
   "loggers": [
     "custom_components.inels"
   ]
