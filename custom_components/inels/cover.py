@@ -151,21 +151,18 @@ class InelsCover(InelsBaseEntity, CoverEntity):
     @property
     def is_opening(self) -> bool | None:
         """Is the cover opening ?"""
-        return self._device.state.__dict__[self.key][self.index].state == Shutter_state.Open
+        if self.key not in ["shutters", "shutters_with_pos"]:
+            return self._device.state.__dict__[self.key][self.index].state == Shutter_state.Open
 
     @property
     def is_closing(self) -> bool | None:
         """Is the cover closing ?"""
-        return self._device.state.__dict__[self.key][self.index].state == Shutter_state.Closed
+        if self.key not in ["shutters", "shutters_with_pos"]:
+            return self._device.state.__dict__[self.key][self.index].state == Shutter_state.Closed
 
     @property
     def is_closed(self) -> bool | None:
         """Cover is closed."""
-        # is_closed = (
-        #     self._device.state.__dict__[self.key][self.index].state
-        #     == Shutter_state.Closed
-        # )
-        # return is_closed
         return self._device.state.__dict__[self.key][self.index].is_closed
 
     @property
