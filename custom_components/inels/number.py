@@ -1,8 +1,8 @@
 """iNELS number entity."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
 from inelsmqtt.devices import Device
 
@@ -13,27 +13,21 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
+from .const import DEVICES, DOMAIN, ICON_NUMBER, OLD_ENTITIES
 from .entity import InelsBaseEntity
-from .const import (
-    DEVICES,
-    DOMAIN,
-    ICON_NUMBER,
-    LOGGER,
-    OLD_ENTITIES,
-)
+
 
 # NUMBER PLATFORM
 @dataclass
 class InelsNumberType:
-    """Inels number property description"""
+    """Inels number property description."""
 
     name: str = "Integer"
     icon: str = ICON_NUMBER
 
 
-INELS_NUMBER_TYPES: dict[str, InelsNumberType] = {
-    "number": InelsNumberType()
-}
+INELS_NUMBER_TYPES: dict[str, InelsNumberType] = {"number": InelsNumberType()}
+
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -51,8 +45,8 @@ async def async_setup_entry(
     for device in device_list:
         for key, type_dict in items:
             if hasattr(device.state, key):
-                for k in range(len(device.state.__dict__[key])):
-                    entities.append(
+                entities.extend(
+                    [
                         InelsBusNumber(
                             device=device,
                             key=key,
@@ -61,9 +55,11 @@ async def async_setup_entry(
                                 key=f"{key}{k}",
                                 name=f"{type_dict.name} {device.state.__dict__[key][k].addr}",
                                 icon=type_dict.icon,
-                            )
+                            ),
                         )
-                    )
+                        for k in range(len(device.state.__dict__[key]))
+                    ]
+                )
     async_add_entities(entities, False)
 
     if old_entities:
@@ -116,7 +112,7 @@ class InelsBusNumber(InelsBaseEntity, NumberEntity):
     async def async_set_native_value(self, value: float) -> None:
         """Update the current value."""
         if not self._device.is_available:
-            return None
+            return
 
         ha_val = self._device.state
         ha_val.__dict__[self.key][self.index].value = value

@@ -1,6 +1,6 @@
 """Constants for the iNels integration."""
-import logging
 
+import logging
 
 DOMAIN = "inels"
 

@@ -1,4 +1,5 @@
 """iNELS binary sensor entity."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -16,7 +17,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
-from .entity import InelsBaseEntity
 from .const import (
     DEVICES,
     DOMAIN,
@@ -28,12 +28,13 @@ from .const import (
     LOGGER,
     OLD_ENTITIES,
 )
+from .entity import InelsBaseEntity
 
 
 # BINARY SENSOR PLATFORM
 @dataclass
 class InelsBinarySensorType:
-    """Binary sensor type property description"""
+    """Binary sensor type property description."""
 
     name: str
     icon: str = None
@@ -139,8 +140,8 @@ async def async_setup_entry(
                         )
                     )
                 else:
-                    for k in range(len(device.state.__dict__[key])):
-                        entities.append(
+                    entities.extend(
+                        [
                             binary_sensor_type(
                                 device=device,
                                 key=key,
@@ -152,7 +153,9 @@ async def async_setup_entry(
                                     device_class=type_dict.device_class,
                                 ),
                             )
-                        )
+                            for k in range(len(device.state.__dict__[key]))
+                        ]
+                    )
 
     async_add_entities(entities, True)
 

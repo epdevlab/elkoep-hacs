@@ -1,4 +1,5 @@
 """iNELS selector entity."""
+
 from __future__ import annotations
 
 from collections.abc import Callable
@@ -14,7 +15,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
-from .entity import InelsBaseEntity
 from .const import (
     DEVICES,
     DOMAIN,
@@ -24,6 +24,7 @@ from .const import (
     SELECT_OPTIONS_DICT,
     SELECT_OPTIONS_ICON,
 )
+from .entity import InelsBaseEntity
 
 
 # SELECT PLATFORM
@@ -151,7 +152,7 @@ class InelsSelect(InelsBaseEntity, SelectEntity):
         """Return the current selected option."""
         state = self._device.state
         option = state.__dict__[self.key]
-        return SELECT_OPTIONS_DICT[self.key][state.__dict__[self.key]]
+        return SELECT_OPTIONS_DICT[self.key][option]
 
     @property
     def options(self) -> list[str]:

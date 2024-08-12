@@ -1,4 +1,5 @@
 """iNELS cover entity."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -20,19 +21,13 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
+from .const import DEVICES, DOMAIN, ICON_SHUTTER_CLOSED, ICON_SHUTTER_OPEN, OLD_ENTITIES
 from .entity import InelsBaseEntity
-from .const import (
-    DEVICES,
-    DOMAIN,
-    ICON_SHUTTER_CLOSED,
-    ICON_SHUTTER_OPEN,
-    OLD_ENTITIES,
-)
 
 
 @dataclass
 class InelsShutterType:
-    """Shutter type property description"""
+    """Shutter type property description."""
 
     name: str
     supported_features: CoverEntityFeature
@@ -88,8 +83,8 @@ async def async_setup_entry(
                         )
                     )
                 else:
-                    for k in range(len(device.state.__dict__[key])):
-                        entities.append(
+                    entities.extend(
+                        [
                             InelsCover(
                                 device=device,
                                 key=key,
@@ -100,7 +95,9 @@ async def async_setup_entry(
                                     supported_features=type_dict.supported_features,
                                 ),
                             )
-                        )
+                            for k in range(len(device.state.__dict__[key]))
+                        ]
+                    )
 
     async_add_entities(entities, False)
 
@@ -150,15 +147,21 @@ class InelsCover(InelsBaseEntity, CoverEntity):
 
     @property
     def is_opening(self) -> bool | None:
-        """Is the cover opening ?"""
+        """Return whether the cover is opening."""
         if self.key not in ["shutters", "shutters_with_pos"]:
-            return self._device.state.__dict__[self.key][self.index].state == Shutter_state.Open
+            return (
+                self._device.state.__dict__[self.key][self.index].state
+                == Shutter_state.Open
+            )
 
     @property
     def is_closing(self) -> bool | None:
-        """Is the cover closing ?"""
+        """Return whether the cover is closing."""
         if self.key not in ["shutters", "shutters_with_pos"]:
-            return self._device.state.__dict__[self.key][self.index].state == Shutter_state.Closed
+            return (
+                self._device.state.__dict__[self.key][self.index].state
+                == Shutter_state.Closed
+            )
 
     @property
     def is_closed(self) -> bool | None:
@@ -179,8 +182,6 @@ class InelsCover(InelsBaseEntity, CoverEntity):
             ha_val.__dict__[self.key][self.index].position = kwargs[ATTR_POSITION]
             ha_val.__dict__[self.key][self.index].set_pos = True
             await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
-            return
-        return super().set_cover_position(**kwargs)
 
     async def async_open_cover(self, **kwargs: Any) -> None:
         """Open cover."""

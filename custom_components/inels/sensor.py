@@ -1,23 +1,17 @@
 """iNELS sensor entity."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
-from inelsmqtt.const import (  # Data types
-    BUS_SENSOR_ERRORS,
-)
+from inelsmqtt.const import BUS_SENSOR_ERRORS, TEMP_IN, TEMP_OUT  # Data types
 from inelsmqtt.devices import Device
-from inelsmqtt.const import (
-    TEMP_IN,
-    TEMP_OUT,
-)
 
 from homeassistant.components.sensor import (
+    SensorDeviceClass,
     SensorEntity,
     SensorEntityDescription,
 )
-from homeassistant.components.sensor import SensorDeviceClass
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import (
     LIGHT_LUX,
@@ -30,7 +24,6 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
-from .entity import InelsBaseEntity
 from .const import (
     DEVICES,
     DOMAIN,
@@ -43,6 +36,7 @@ from .const import (
     LOGGER,
     OLD_ENTITIES,
 )
+from .entity import InelsBaseEntity
 
 
 # SENSOR PLATFORM
@@ -174,8 +168,8 @@ async def async_setup_entry(
         for key, type_dict in items:
             if hasattr(device.state, key):
                 if type_dict.indexed:
-                    for k in range(len(device.state.__dict__[key])):
-                        entities.append(
+                    entities.extend(
+                        [
                             InelsSensor(
                                 device=device,
                                 key=key,
@@ -188,7 +182,9 @@ async def async_setup_entry(
                                     raw_sensor_value=type_dict.raw_sensor_value,
                                 ),
                             )
-                        )
+                            for k in range(len(device.state.__dict__[key]))
+                        ]
+                    )
                 else:
                     entities.append(
                         InelsSensor(
@@ -264,4 +260,5 @@ class InelsSensor(InelsBaseEntity, SensorEntity):
 
     @property
     def available(self) -> bool:
+        """Return True if entity is available and sensor has no error."""
         return (not self.sensor_error) and super().available

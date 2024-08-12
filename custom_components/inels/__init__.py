@@ -1,5 +1,7 @@
 """The iNels integration."""
+
 from __future__ import annotations
+
 from typing import Any
 
 from inelsmqtt import InelsMqtt
@@ -14,15 +16,15 @@ from homeassistant.helpers import device_registry as dr, entity_registry as er
 from .const import BROKER, BROKER_CONFIG, DEVICES, DOMAIN, LOGGER, OLD_ENTITIES
 
 PLATFORMS: list[Platform] = [
-    Platform.BUTTON,
-    Platform.SWITCH,
-    Platform.NUMBER,
-    Platform.LIGHT,
-    Platform.COVER,
-    Platform.SENSOR,
-    Platform.CLIMATE,
     Platform.BINARY_SENSOR,
+    Platform.BUTTON,
+    Platform.CLIMATE,
+    Platform.COVER,
+    Platform.LIGHT,
+    Platform.NUMBER,
     Platform.SELECT,
+    Platform.SENSOR,
+    Platform.SWITCH,
 ]
 
 
@@ -80,7 +82,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         entity_registry, entry.entry_id
     )
     for entity in registry_entries:
-        if not entity.domain in old_entries:
+        if entity.domain not in old_entries:
             old_entries[entity.domain] = []
         old_entries[entity.domain].append(entity.entity_id)
 

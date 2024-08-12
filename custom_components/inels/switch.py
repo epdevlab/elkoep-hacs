@@ -1,4 +1,5 @@
 """iNELS switch entity."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -13,14 +14,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
+from .const import DEVICES, DOMAIN, ICON_SWITCH, LOGGER, OLD_ENTITIES
 from .entity import InelsBaseEntity
-from .const import (
-    DEVICES,
-    DOMAIN,
-    ICON_SWITCH,
-    LOGGER,
-    OLD_ENTITIES,
-)
 
 
 # SWITCH PLATFORM
@@ -37,7 +32,7 @@ relay_overflow = InelsSwitchAlert(key="overflow", message="Relay overflow in %s 
 
 @dataclass
 class InelsSwitchType:
-    """Inels switch property description"""
+    """Inels switch property description."""
 
     name: str = "Relay"
     icon: str = ICON_SWITCH
@@ -84,15 +79,17 @@ async def async_setup_entry(
                     )
                 else:
                     for k in range(len(device.state.__dict__[key])):
-                        description=InelsSwitchEntityDescription(
+                        description = InelsSwitchEntityDescription(
                             key=f"{key}{k}",
                             name=f"{type_dict.name} {k+1}",
                             icon=type_dict.icon,
                             overload_key=type_dict.overflow,
                         )
 
-                        if device.inels_type == 'BITS':
-                            description.name = f"Bit {device.state.__dict__[key][k].addr}"
+                        if device.inels_type == "BITS":
+                            description.name = (
+                                f"Bit {device.state.__dict__[key][k].addr}"
+                            )
 
                         entities.append(
                             InelsBusSwitch(
@@ -170,7 +167,7 @@ class InelsBusSwitch(InelsBaseEntity, SwitchEntity):
     async def async_turn_off(self, **kwargs: Any) -> None:
         """Instruct the switch to turn off."""
         if not self._device.is_available:
-            return None
+            return
 
         ha_val = self._device.state
         ha_val.__dict__[self.key][self.index].is_on = False
@@ -180,7 +177,7 @@ class InelsBusSwitch(InelsBaseEntity, SwitchEntity):
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Instruct the switch to turn on."""
         if not self._device.is_available:
-            return None
+            return
 
         ha_val = self._device.state
         ha_val.__dict__[self.key][self.index].is_on = True

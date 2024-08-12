@@ -1,5 +1,7 @@
 """iNELS light."""
+
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any, cast
 
@@ -21,15 +23,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
+from .const import DEVICES, DOMAIN, ICON_FLASH, ICON_LIGHT, LOGGER, OLD_ENTITIES
 from .entity import InelsBaseEntity
-from .const import (
-    DEVICES,
-    DOMAIN,
-    ICON_FLASH,
-    ICON_LIGHT,
-    LOGGER,
-    OLD_ENTITIES,
-)
 
 
 # LIGHT PLATFORM
@@ -133,8 +128,8 @@ async def async_setup_entry(
                         )
                     )
                 else:
-                    for k in range(len(device.state.__dict__[key])):
-                        entities.append(
+                    entities.extend(
+                        [
                             InelsLight(
                                 device=device,
                                 key=key,
@@ -146,7 +141,9 @@ async def async_setup_entry(
                                     color_modes=type_dict.color_modes,
                                 ),
                             )
-                        )
+                            for k in range(len(device.state.__dict__[key]))
+                        ]
+                    )
 
     async_add_entities(entities, True)
 
@@ -234,6 +231,7 @@ class InelsLight(InelsBaseEntity, LightEntity):
 
     @property
     def rgb_color(self) -> tuple[int, int, int] | None:
+        """Return the RGB color value."""
         state = self._device.state.__dict__[self.key][self.index]
         if hasattr(state, "r"):
             return (state.r, state.g, state.b)
@@ -241,6 +239,7 @@ class InelsLight(InelsBaseEntity, LightEntity):
 
     @property
     def rgbw_color(self) -> tuple[int, int, int, int] | None:
+        """Return the RGBW color value."""
         state = self._device.state.__dict__[self.key][self.index]
         if hasattr(state, "w"):
             return tuple(int(i * 2.55) for i in (state.r, state.g, state.b, state.w))
@@ -248,6 +247,7 @@ class InelsLight(InelsBaseEntity, LightEntity):
 
     @property
     def color_temp_kelvin(self) -> int | None:
+        """Return the color temperature in Kelvin."""
         state = self._device.state.__dict__[self.key][self.index]
         if hasattr(state, "relative_ct"):
             return int(
@@ -259,6 +259,7 @@ class InelsLight(InelsBaseEntity, LightEntity):
 
     @property
     def color_mode(self) -> ColorMode | str | None:
+        """Return the color mode of the light."""
         state = self._device.state.__dict__[self.key][self.index]
         if hasattr(state, "w"):
             return ColorMode.RGBW
@@ -276,7 +277,6 @@ class InelsLight(InelsBaseEntity, LightEntity):
         transition = None
         if ATTR_TRANSITION in kwargs:
             transition = int(kwargs[ATTR_TRANSITION]) / 0.065
-            print(transition)
         else:
             # mount device ha value
             ha_val = self._device.get_value().ha_value

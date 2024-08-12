@@ -1,4 +1,5 @@
 """Base class for iNELS components."""
+
 from __future__ import annotations
 
 from inelsmqtt.devices import Device
@@ -40,11 +41,16 @@ class InelsBaseEntity(Entity):
 
     def _callback(self) -> None:
         """Get data from broker into the HA."""
-        if hasattr(self, 'hass'):
+        if hasattr(self, "hass"):
             try:
                 self.schedule_update_ha_state()
             except Exception as e:
-                LOGGER.error("schedule_update_ha_state DT_%s, %s, %s", self._device.device_class, self._device.info_serialized(), e)
+                LOGGER.error(
+                    "Error scheduling HA state update for DT_%s, %s, %s",
+                    self._device.device_class,
+                    self._device.info_serialized(),
+                    e,
+                )
 
     @property
     def should_poll(self) -> bool:

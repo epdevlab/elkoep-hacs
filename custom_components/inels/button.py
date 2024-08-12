@@ -1,29 +1,29 @@
 """Support for iNELS buttons."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any
 
-from inelsmqtt.devices import Device
 from inelsmqtt.const import (
+    GBP3_60,
+    GCH3_31,
+    GCR3_11,
+    GDB3_10,
     GRT3_50,
+    GSB3_20SX,
+    GSB3_40SX,
+    GSB3_60SX,
     GSB3_90SX,
+    GSP3_100,
+    IDRT3_1,
+    JA3_014M,
+    JA3_018M,
     WSB3_20,
     WSB3_20H,
     WSB3_40,
     WSB3_40H,
-    GCR3_11,
-    GCH3_31,
-    GSP3_100,
-    GDB3_10,
-    GSB3_40SX,
-    GSB3_60SX,
-    GSB3_20SX,
-    GBP3_60,
-    IDRT3_1,
-    JA3_018M,
-    JA3_014M,
 )
+from inelsmqtt.devices import Device
 
 from homeassistant.components.button import (
     SERVICE_PRESS,
@@ -38,28 +38,28 @@ from homeassistant.helpers.entity import EntityCategory
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.util import slugify
 
-from .entity import InelsBaseEntity
 from .const import (
     DEVICES,
     DOMAIN,
     ICON_BUTTON,
+    ICON_CYCLE,
+    ICON_DOWN,
     ICON_ECO,
     ICON_FAN_1,
     ICON_FAN_2,
     ICON_FAN_3,
     ICON_MINUS,
     ICON_PLUS,
-    ICON_CYCLE,
     ICON_UP,
-    ICON_DOWN,
     OLD_ENTITIES,
 )
+from .entity import InelsBaseEntity
 
 
 # BUTTON PLATFORM
 @dataclass
 class InelsButtonType:
-    """Button type property description"""
+    """Button type property description."""
 
     name: str
     icon: str = ICON_BUTTON
@@ -234,6 +234,7 @@ class InelsButton(InelsBaseEntity, ButtonEntity):
 
     @property
     def available(self) -> bool:
+        """Return True if entity is available."""
         # since the buttons only work within HA, they can always be available
         return True
 
