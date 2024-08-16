@@ -177,8 +177,8 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
     @property
     def supported_features(self) -> ClimateEntityFeature:
         """Return the list of supported features."""
-        if len(self.entity_description.features) == 0:
-            return self.entity_description.features
+        if self.entity_description.name == "Thermovalve":
+            return self.entity_description.features[0]
         else:
             return self.entity_description.features[
                 self._device.state.__dict__[self.key].control_mode
@@ -226,8 +226,8 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
     def hvac_action(self) -> HVACAction | str | None:
         """Return the current HVAC action."""
         val = self._device.state.__dict__[self.key]
-
-        return CLIMATE_ACTION_TO_HVAC_ACTION.get(val.current_action)
+        if hasattr(val, "current_action"):  # virtual controller
+            return CLIMATE_ACTION_TO_HVAC_ACTION.get(val.current_action)
 
     @property
     def preset_mode(self) -> str | None:
