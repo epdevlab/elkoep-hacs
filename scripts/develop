@@ -16,5 +16,7 @@ fi
 ## without resulting to symlinks.
 export PYTHONPATH="${PYTHONPATH}:${PWD}/custom_components"
 
+python3 -m pip install -e ./config/custom_libraries/elkoep-mqtt
+
 # Start Home Assistant
 hass --skip-pip-packages inelsmqtt --config "${PWD}/config" --debug
