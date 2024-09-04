@@ -242,7 +242,7 @@ def try_connection(
     port: str,
     username: str,
     password: str,
-    transfer: str = "tcp",
+    transport: str = "tcp",
 ):
     """Test if we can connect to an MQTT broker."""
     entry_config = {
@@ -250,7 +250,7 @@ def try_connection(
         CONF_PORT: port,
         CONF_USERNAME: username,
         CONF_PASSWORD: password,
-        MQTT_TRANSPORT: transfer,
+        MQTT_TRANSPORT: transport,
     }
     client = InelsMqtt(entry_config)
     ret = client.test_connection()

@@ -12,7 +12,6 @@ from homeassistant.components.light import (
     ATTR_COLOR_TEMP_KELVIN,
     ATTR_RGB_COLOR,
     ATTR_RGBW_COLOR,
-    ATTR_TRANSITION,
     ColorMode,
     LightEntity,
     LightEntityDescription,
@@ -37,24 +36,24 @@ class InelsLightAlert:
 
 
 thermal_alert = InelsLightAlert(
-    key="toa", message="Thermal overload on light %s of device %d"
+    key="toa", message="Thermal overload on light %s of device %s"
 )
 
 current_alert = InelsLightAlert(
-    key="coa", message="Current overload on light %s of device %d"
+    key="coa", message="Current overload on light %s of device %s"
 )
 
 dali_comm = InelsLightAlert(
     key="alert_dali_communication",
-    message="Dali communication error on light %s of device %d",
+    message="Dali communication error on light %s of device %s",
 )
 
 dali_power = InelsLightAlert(
-    key="alert_dali_communication", message="Dali power error on light %s of device %d"
+    key="alert_dali_communication", message="Dali power error on light %s of device %s"
 )
 
 aout_current = InelsLightAlert(
-    key="aout_coa", message="Current overload of AOUT %s of device %d"
+    key="aout_coa", message="Current overload of AOUT %s of device %s"
 )
 
 
@@ -106,7 +105,7 @@ async def async_setup_entry(
     device_list: list[Device] = hass.data[DOMAIN][config_entry.entry_id][DEVICES]
     old_entities: list[str] = hass.data[DOMAIN][config_entry.entry_id][
         OLD_ENTITIES
-    ].get(Platform.LIGHT)
+    ].get(Platform.LIGHT, [])
 
     items = INELS_LIGHT_TYPES.items()
     entities: list[InelsBaseEntity] = []
@@ -124,6 +123,7 @@ async def async_setup_entry(
                                 name=type_dict.name,
                                 icon=type_dict.icon,
                                 color_modes=type_dict.color_modes,
+                                alerts=getattr(type_dict, "alerts", None),
                             ),
                         )
                     )
@@ -139,6 +139,7 @@ async def async_setup_entry(
                                     name=f"{type_dict.name} {k+1}",
                                     icon=type_dict.icon,
                                     color_modes=type_dict.color_modes,
+                                    alerts=getattr(type_dict, "alerts", None),
                                 ),
                             )
                             for k in range(len(device.state.__dict__[key]))
@@ -152,7 +153,9 @@ async def async_setup_entry(
             if entity.entity_id in old_entities:
                 old_entities.pop(old_entities.index(entity.entity_id))
 
-    hass.data[DOMAIN][config_entry.entry_id][Platform.LIGHT] = old_entities
+    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.LIGHT] = (
+        old_entities
+    )
 
 
 @dataclass
@@ -200,15 +203,22 @@ class InelsLight(InelsBaseEntity, LightEntity):
     def available(self) -> bool:
         """If it is available."""
         if self._entity_description.alerts:
-            last_state = self._device.last_values.ha_value.__dict__[self.key][
-                self.index
-            ]
+            try:
+                last_state = self._device.last_values.ha_value.__dict__[self.key][
+                    self.index
+                ]
+            except (KeyError, IndexError, AttributeError):
+                last_state = None
+
             for alert in self._entity_description.alerts:
-                if hasattr(self._device.state, alert.key):
-                    if self._device.state.__dict__[alert.key]:
-                        if not last_state.__dict__[alert.key]:
-                            LOGGER.warning(alert.message, self.name, self._device_id)
-                        return False
+                if getattr(
+                    self._device.state.__dict__[self.key][self.index], alert.key, None
+                ):
+                    if not last_state or not getattr(last_state, alert.key):
+                        LOGGER.warning(
+                            alert.message, self.name, self._device.state_topic
+                        )
+                    return False
         return super().available
 
     @property
@@ -235,7 +245,6 @@ class InelsLight(InelsBaseEntity, LightEntity):
         state = self._device.state.__dict__[self.key][self.index]
         if hasattr(state, "r"):
             return (state.r, state.g, state.b)
-        return None
 
     @property
     def rgbw_color(self) -> tuple[int, int, int, int] | None:
@@ -243,7 +252,6 @@ class InelsLight(InelsBaseEntity, LightEntity):
         state = self._device.state.__dict__[self.key][self.index]
         if hasattr(state, "w"):
             return tuple(int(i * 2.55) for i in (state.r, state.g, state.b, state.w))
-        return None
 
     @property
     def color_temp_kelvin(self) -> int | None:
@@ -255,7 +263,6 @@ class InelsLight(InelsBaseEntity, LightEntity):
                 * (self.max_color_temp_kelvin - self.min_color_temp_kelvin)
                 + self.min_color_temp_kelvin
             )
-        return None
 
     @property
     def color_mode(self) -> ColorMode | str | None:
@@ -274,14 +281,10 @@ class InelsLight(InelsBaseEntity, LightEntity):
         if not self._device:
             return
 
-        transition = None
-        if ATTR_TRANSITION in kwargs:
-            transition = int(kwargs[ATTR_TRANSITION]) / 0.065
-        else:
-            # mount device ha value
-            ha_val = self._device.get_value().ha_value
-            ha_val.__dict__[self.key][self.index].brightness = 0
-            await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
+        # mount device ha value
+        ha_val = self._device.get_value().ha_value
+        ha_val.__dict__[self.key][self.index].brightness = 0
+        await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
 
     async def async_turn_on(self, **kwargs: Any) -> None:
         """Light to turn on."""
@@ -322,7 +325,8 @@ class InelsLight(InelsBaseEntity, LightEntity):
             # uses previously observed brightness value if it isn't 0
             ha_val.__dict__[self.key][self.index].brightness = (
                 100
-                if last_val.__dict__[self.key][self.index].brightness == 0
+                if last_val is None
+                or last_val.__dict__[self.key][self.index].brightness == 0
                 else last_val.__dict__[self.key][self.index].brightness
             )
 

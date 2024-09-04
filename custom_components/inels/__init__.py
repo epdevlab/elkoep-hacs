@@ -28,6 +28,36 @@ PLATFORMS: list[Platform] = [
 ]
 
 
+async def async_remove_old_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove old entities that aren't being used."""
+    entity_registry = er.async_get(hass)
+    remaining_entries = hass.data[DOMAIN][entry.entry_id][OLD_ENTITIES]
+
+    for platform in remaining_entries:
+        for entity_id in remaining_entries[platform]:
+            entity_registry.async_remove(entity_id)
+
+
+async def async_remove_devices_with_no_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+    """Remove devices with no entities."""
+    device_registry = dr.async_get(hass)
+    entity_registry = er.async_get(hass)
+
+    registered_devices = [
+        entry.id
+        for entry in dr.async_entries_for_config_entry(
+            registry=device_registry, config_entry_id=entry.entry_id
+        )
+    ]
+
+    for device_id in registered_devices:
+        if not er.async_entries_for_device(
+            entity_registry, device_id, include_disabled_entities=True
+        ):
+            LOGGER.info("Removing device %s, because it has no entities", device_id)
+            device_registry.async_remove_device(device_id=device_id)
+
+
 async def _async_config_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
     """Call when config entry being updated."""
 
@@ -38,7 +68,7 @@ async def _async_config_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up iNELS from a config entry."""
-
+    print("IMMMMMMMMMMMMMMMMMMMMMMMMMMM HEEEEEEEEEEEERRRRRRRRRREEEEEEEEEEEEEEEEEEEE")
     if CONF_HOST not in entry.data:
         LOGGER.error("MQTT broker is not configured")
         return False
@@ -93,30 +123,8 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     LOGGER.info("Platform setup complete")
 
     LOGGER.info("Cleaning up entities/devices")
-
-    # remove the old entities that aren't being used
-    remaining_entries: dict[str, list[str]] = hass.data[DOMAIN][entry.entry_id][
-        OLD_ENTITIES
-    ]
-    for platform in remaining_entries:
-        for entity_id in remaining_entries[platform]:
-            entity_registry.async_remove(entity_id)
-
-    # check for devices without
-    device_registry: dr.DeviceRegistry = dr.async_get(hass)
-    registered_devices: list[str] = [
-        entry.id
-        for entry in dr.async_entries_for_config_entry(
-            registry=device_registry, config_entry_id=entry.entry_id
-        )
-    ]
-
-    for device_id in registered_devices:
-        if not er.async_entries_for_device(
-            entity_registry, device_id, include_disabled_entities=True
-        ):
-            LOGGER.info("Removing device %s, because it has no entities", device_id)
-            device_registry.async_remove_device(device_id=device_id)
+    await async_remove_old_entities(hass, entry)
+    await async_remove_devices_with_no_entities(hass, entry)
 
     LOGGER.info("Platform setup complete")
     return True
@@ -139,7 +147,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     if unload_ok:
         hass.data[DOMAIN].pop(entry.entry_id)
 
-    if hass.data[DOMAIN]:
+    if not hass.data[DOMAIN]:
         hass.data.pop(DOMAIN)
 
     return True

@@ -27,7 +27,7 @@ class InelsSwitchAlert:
     message: str
 
 
-relay_overflow = InelsSwitchAlert(key="overflow", message="Relay overflow in %s of %d")
+relay_overflow = InelsSwitchAlert(key="overflow", message="Relay overflow in %s of %s")
 
 
 @dataclass
@@ -36,7 +36,6 @@ class InelsSwitchType:
 
     name: str = "Relay"
     icon: str = ICON_SWITCH
-    overflow: str | None = None
     alerts: list[InelsSwitchAlert] | None = None
 
 
@@ -56,7 +55,7 @@ async def async_setup_entry(
     device_list: list[Device] = hass.data[DOMAIN][config_entry.entry_id][DEVICES]
     old_entities: list[str] = hass.data[DOMAIN][config_entry.entry_id][
         OLD_ENTITIES
-    ].get(Platform.SWITCH)
+    ].get(Platform.SWITCH, [])
 
     items = INELS_SWITCH_TYPES.items()
     entities: list[InelsBaseEntity] = []
@@ -73,7 +72,7 @@ async def async_setup_entry(
                                 key=key,
                                 name=type_dict.name,
                                 icon=type_dict.icon,
-                                overload_key=type_dict.overflow,
+                                alerts=getattr(type_dict, 'alerts', None)
                             ),
                         )
                     )
@@ -83,7 +82,7 @@ async def async_setup_entry(
                             key=f"{key}{k}",
                             name=f"{type_dict.name} {k+1}",
                             icon=type_dict.icon,
-                            overload_key=type_dict.overflow,
+                            alerts=getattr(type_dict, 'alerts', None)
                         )
 
                         if device.inels_type == "BITS":
@@ -106,14 +105,13 @@ async def async_setup_entry(
             if entity.entity_id in old_entities:
                 old_entities.pop(old_entities.index(entity.entity_id))
 
-    hass.data[DOMAIN][config_entry.entry_id][Platform.SWITCH] = old_entities
+    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.SWITCH] = old_entities
 
 
 @dataclass
 class InelsSwitchEntityDescription(SwitchEntityDescription):
     """Class for description inels entities."""
 
-    overload_key: str | None = None
     alerts: list[InelsSwitchAlert] | None = None
 
 
@@ -142,15 +140,16 @@ class InelsBusSwitch(InelsBaseEntity, SwitchEntity):
     def available(self) -> bool:
         """Return entity availability."""
         if self.entity_description.alerts:
-            last_state = self._device.last_values.ha_value.__dict__[self.key][
-                self.index
-            ]
+            try:
+                last_state = self._device.last_values.ha_value.__dict__[self.key][self.index]
+            except (KeyError, IndexError, AttributeError):
+                last_state = None
+
             for alert in self.entity_description.alerts:
-                if hasattr(self._device.state, alert.key):
-                    if self._device.state.__dict__[alert.key]:
-                        if not last_state.__dict__[alert.key]:
-                            LOGGER.warning(alert.message, self.name, self._device_id)
-                        return False
+                if getattr(self._device.state.__dict__[self.key][self.index], alert.key, None):
+                    if not last_state or not getattr(last_state, alert.key):
+                        LOGGER.warning(alert.message, self.name, self._device.state_topic)
+                    return False
         return super().available
 
     @property

@@ -113,7 +113,7 @@ async def async_setup_entry(
     device_list: list[Device] = hass.data[DOMAIN][config_entry.entry_id][DEVICES]
     old_entities: list[str] = hass.data[DOMAIN][config_entry.entry_id][
         OLD_ENTITIES
-    ].get(Platform.BINARY_SENSOR)
+    ].get(Platform.BINARY_SENSOR, [])
 
     items = INELS_BINARY_SENSOR_TYPES.items()
     entities: list[InelsBaseEntity] = []
@@ -164,7 +164,7 @@ async def async_setup_entry(
             if entity.entity_id in old_entities:
                 old_entities.pop(old_entities.index(entity.entity_id))
 
-    hass.data[DOMAIN][config_entry.entry_id][Platform.BINARY_SENSOR] = old_entities
+    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.BINARY_SENSOR] = old_entities
 
 
 class InelsBinarySensor(InelsBaseEntity, BinarySensorEntity):
@@ -237,14 +237,18 @@ class InelsBinaryInputSensor(InelsBaseEntity, BinarySensorEntity):
         """Return availability of device."""
 
         val = self._device.values.ha_value.__dict__[self.key]
-        last_val = self._device.last_values.ha_value.__dict__[self.key]
+        try:
+            last_val = self._device.last_values.ha_value.__dict__[self.key]
+        except (KeyError, AttributeError):
+            last_val = None
+
         if self.index != -1:
             val = val[self.index]
-            last_val = last_val[self.index]
+            last_val = last_val[self.index] if last_val else None
 
         if val in [0, 1]:
             return True
-        if last_val != val:
+        if last_val is not None and last_val != val:
             if val == 2:
                 LOGGER.warning("%s ALERT", self._attr_unique_id)
             elif val == 3:

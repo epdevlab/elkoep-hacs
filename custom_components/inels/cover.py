@@ -62,7 +62,7 @@ async def async_setup_entry(
     device_list: list[Device] = hass.data[DOMAIN][config_entry.entry_id][DEVICES]
     old_entities: list[str] = hass.data[DOMAIN][config_entry.entry_id][
         OLD_ENTITIES
-    ].get(Platform.COVER)
+    ].get(Platform.COVER, [])
 
     items = INELS_SHUTTERS_TYPES.items()
     entities: list[InelsBaseEntity] = []
@@ -106,7 +106,7 @@ async def async_setup_entry(
             if entity.entity_id in old_entities:
                 old_entities.pop(old_entities.index(entity.entity_id))
 
-    hass.data[DOMAIN][config_entry.entry_id][Platform.COVER] = old_entities
+    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.COVER] = old_entities
 
 
 @dataclass

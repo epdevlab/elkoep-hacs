@@ -104,7 +104,7 @@ async def async_setup_entry(
     device_list: list[Device] = hass.data[DOMAIN][config_entry.entry_id][DEVICES]
     old_entities: list[str] = hass.data[DOMAIN][config_entry.entry_id][
         OLD_ENTITIES
-    ].get(Platform.CLIMATE)
+    ].get(Platform.CLIMATE, [])
 
     items = INELS_CLIMATE_TYPES.items()
     entities: list[InelsBaseEntity] = []
@@ -133,7 +133,7 @@ async def async_setup_entry(
             if entity.entity_id in old_entities:
                 old_entities.pop(old_entities.index(entity.entity_id))
 
-    hass.data[DOMAIN][config_entry.entry_id][Platform.CLIMATE] = old_entities
+    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.CLIMATE] = old_entities
 
 
 @dataclass
@@ -236,7 +236,6 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
 
         if hasattr(val, "current_preset") and val.control_mode == 0:  # user controlled
             return self.preset_modes[val.current_preset]
-        return None
 
     @property
     def preset_modes(self) -> list[str] | None:
@@ -245,7 +244,6 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
 
         if hasattr(val, "current_preset") and val.control_mode == 0:  # user controlled
             return self.entity_description.presets
-        return None
 
     async def async_set_temperature(self, **kwargs) -> None:
         """Set the required temperature."""
@@ -264,14 +262,13 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
 
             if hasattr(ha_val.__dict__[self.key], "current_preset"):
                 ha_val.__dict__[self.key].current_preset = 5  # manual mode
-        else:
-            if ATTR_TEMPERATURE in kwargs:
-                if self.hvac_mode == HVACMode.COOL:
-                    ha_val.__dict__[self.key].required_cool = kwargs.get(
-                        ATTR_TEMPERATURE
-                    )
-                else:
-                    ha_val.__dict__[self.key].required = kwargs.get(ATTR_TEMPERATURE)
+        elif ATTR_TEMPERATURE in kwargs:
+            if self.hvac_mode == HVACMode.COOL:
+                ha_val.__dict__[self.key].required_cool = kwargs.get(
+                    ATTR_TEMPERATURE
+                )
+            else:
+                ha_val.__dict__[self.key].required = kwargs.get(ATTR_TEMPERATURE)
 
         await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
 
