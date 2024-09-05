@@ -10,6 +10,7 @@ import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.components.hassio.discovery import HassioServiceInfo
+from homeassistant.config_entries import ConfigFlowResult
 from homeassistant.const import (
     CONF_DISCOVERY,
     CONF_HOST,
@@ -18,7 +19,6 @@ from homeassistant.const import (
     CONF_USERNAME,
 )
 from homeassistant.core import HomeAssistant, callback
-from homeassistant.data_entry_flow import FlowResult
 
 from .const import DOMAIN, TITLE
 
@@ -42,7 +42,7 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Handle a flow by user."""
         if self._async_current_entries():
             return self.async_abort(reason="single_instance_allowed")
@@ -51,7 +51,7 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_setup(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Configure the setup."""
         errors: dict[str, str] = {}
 
@@ -110,7 +110,9 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
             last_step=True,
         )
 
-    async def async_step_hassio(self, discovery_info: HassioServiceInfo) -> FlowResult:
+    async def async_step_hassio(
+        self, discovery_info: HassioServiceInfo
+    ) -> ConfigFlowResult:
         """Receive a Hass.io discovery."""
         await self._async_handle_discovery_without_unique_id()
         self._hassio_discovery = discovery_info.config
@@ -119,7 +121,7 @@ class FlowHandler(config_entries.ConfigFlow, domain=DOMAIN):
 
     async def async_step_confirm(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Confirm a discovery."""
         errors = {}
         assert self._hassio_discovery
@@ -167,13 +169,13 @@ class InelsOptionsFlowHandler(config_entries.OptionsFlow):
         self.broker_config: dict[str, str | int] = {}
         self.options = dict(config_entry.options)
 
-    async def async_step_init(self, user_input: None = None) -> FlowResult:
+    async def async_step_init(self, user_input: None = None) -> ConfigFlowResult:
         """Manage the MQTT setup."""
         return await self.async_step_setup()
 
     async def async_step_setup(
         self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
+    ) -> ConfigFlowResult:
         """Manage the MQTT configuration to connect."""
         errors = {}
         current_config = self.config_entry.data

@@ -72,7 +72,7 @@ async def async_setup_entry(
                                 key=key,
                                 name=type_dict.name,
                                 icon=type_dict.icon,
-                                alerts=getattr(type_dict, 'alerts', None)
+                                alerts=getattr(type_dict, "alerts", None),
                             ),
                         )
                     )
@@ -82,7 +82,7 @@ async def async_setup_entry(
                             key=f"{key}{k}",
                             name=f"{type_dict.name} {k+1}",
                             icon=type_dict.icon,
-                            alerts=getattr(type_dict, 'alerts', None)
+                            alerts=getattr(type_dict, "alerts", None),
                         )
 
                         if device.inels_type == "BITS":
@@ -105,7 +105,9 @@ async def async_setup_entry(
             if entity.entity_id in old_entities:
                 old_entities.pop(old_entities.index(entity.entity_id))
 
-    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.SWITCH] = old_entities
+    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.SWITCH] = (
+        old_entities
+    )
 
 
 @dataclass
@@ -141,14 +143,20 @@ class InelsBusSwitch(InelsBaseEntity, SwitchEntity):
         """Return entity availability."""
         if self.entity_description.alerts:
             try:
-                last_state = self._device.last_values.ha_value.__dict__[self.key][self.index]
+                last_state = self._device.last_values.ha_value.__dict__[self.key][
+                    self.index
+                ]
             except (KeyError, IndexError, AttributeError):
                 last_state = None
 
             for alert in self.entity_description.alerts:
-                if getattr(self._device.state.__dict__[self.key][self.index], alert.key, None):
+                if getattr(
+                    self._device.state.__dict__[self.key][self.index], alert.key, None
+                ):
                     if not last_state or not getattr(last_state, alert.key):
-                        LOGGER.warning(alert.message, self.name, self._device.state_topic)
+                        LOGGER.warning(
+                            alert.message, self.name, self._device.state_topic
+                        )
                     return False
         return super().available
 

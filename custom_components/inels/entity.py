@@ -44,7 +44,7 @@ class InelsBaseEntity(Entity):
         if hasattr(self, "hass"):
             try:
                 self.schedule_update_ha_state()
-            except Exception as e:
+            except Exception as e:  # noqa: BLE001
                 LOGGER.error(
                     "Error scheduling HA state update for DT_%s, %s, %s",
                     self._device.device_class,

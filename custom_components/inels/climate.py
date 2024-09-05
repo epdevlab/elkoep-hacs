@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Any
 
 from inelsmqtt.const import Climate_action, Climate_modes
 from inelsmqtt.devices import Device
@@ -133,7 +134,9 @@ async def async_setup_entry(
             if entity.entity_id in old_entities:
                 old_entities.pop(old_entities.index(entity.entity_id))
 
-    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.CLIMATE] = old_entities
+    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.CLIMATE] = (
+        old_entities
+    )
 
 
 @dataclass
@@ -205,7 +208,7 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
         return self._device.state.__dict__[self.key].required_cool
 
     @property
-    def hvac_modes(self) -> list[HVACMode] | list[str]:
+    def hvac_modes(self) -> list[HVACMode]:
         """Return a list of available HVAC modes."""
         val = self._device.state.__dict__[self.key]
         if hasattr(val, "control_mode"):  # virtual controller
@@ -216,14 +219,14 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
         return self.entity_description.hvac_modes
 
     @property
-    def hvac_mode(self) -> HVACMode | str | None:
+    def hvac_mode(self) -> HVACMode | None:
         """Return the current HVAC mode."""
         val = self._device.state.__dict__[self.key]
 
         return CLIMATE_MODE_TO_HVAC_MODE.get(val.climate_mode)
 
     @property
-    def hvac_action(self) -> HVACAction | str | None:
+    def hvac_action(self) -> HVACAction | None:
         """Return the current HVAC action."""
         val = self._device.state.__dict__[self.key]
         if hasattr(val, "current_action"):  # virtual controller
@@ -245,7 +248,7 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
         if hasattr(val, "current_preset") and val.control_mode == 0:  # user controlled
             return self.entity_description.presets
 
-    async def async_set_temperature(self, **kwargs) -> None:
+    async def async_set_temperature(self, **kwargs: Any) -> None:
         """Set the required temperature."""
         ha_val = self._device.state
         if hasattr(ha_val.__dict__[self.key], "control_mode"):
@@ -264,9 +267,7 @@ class InelsClimate(InelsBaseEntity, ClimateEntity):
                 ha_val.__dict__[self.key].current_preset = 5  # manual mode
         elif ATTR_TEMPERATURE in kwargs:
             if self.hvac_mode == HVACMode.COOL:
-                ha_val.__dict__[self.key].required_cool = kwargs.get(
-                    ATTR_TEMPERATURE
-                )
+                ha_val.__dict__[self.key].required_cool = kwargs.get(ATTR_TEMPERATURE)
             else:
                 ha_val.__dict__[self.key].required = kwargs.get(ATTR_TEMPERATURE)
 

@@ -107,7 +107,9 @@ async def async_setup_entry(
             if entity.entity_id in old_entities:
                 old_entities.pop(old_entities.index(entity.entity_id))
 
-    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.SELECT] = old_entities
+    hass.data[DOMAIN][config_entry.entry_id][OLD_ENTITIES][Platform.SELECT] = (
+        old_entities
+    )
 
 
 class InelsSelect(InelsBaseEntity, SelectEntity):

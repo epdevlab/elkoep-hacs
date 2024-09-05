@@ -38,7 +38,9 @@ async def async_remove_old_entities(hass: HomeAssistant, entry: ConfigEntry) -> 
             entity_registry.async_remove(entity_id)
 
 
-async def async_remove_devices_with_no_entities(hass: HomeAssistant, entry: ConfigEntry) -> None:
+async def async_remove_devices_with_no_entities(
+    hass: HomeAssistant, entry: ConfigEntry
+) -> None:
     """Remove devices with no entities."""
     device_registry = dr.async_get(hass)
     entity_registry = er.async_get(hass)
@@ -68,7 +70,6 @@ async def _async_config_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up iNELS from a config entry."""
-    print("IMMMMMMMMMMMMMMMMMMMMMMMMMMM HEEEEEEEEEEEERRRRRRRRRREEEEEEEEEEEEEEEEEEEE")
     if CONF_HOST not in entry.data:
         LOGGER.error("MQTT broker is not configured")
         return False
