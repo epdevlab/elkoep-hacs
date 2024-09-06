@@ -1,4 +1,4 @@
-"""The iNels integration."""
+"""The iNELS integration."""
 
 from __future__ import annotations
 

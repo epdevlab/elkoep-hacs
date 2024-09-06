@@ -1,4 +1,4 @@
-"""Constants for the iNels integration."""
+"""Constants for the iNELS integration."""
 
 import logging
 
