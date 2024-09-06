@@ -7,14 +7,10 @@ from inelsmqtt.const import MQTT_TRANSPORT
 import pytest
 
 from homeassistant import config_entries, data_entry_flow
-from homeassistant.components.hassio import HassioServiceInfo
 from homeassistant.const import (
-    CONF_DISCOVERY,
     CONF_HOST,
     CONF_PASSWORD,
     CONF_PORT,
-    CONF_PROTOCOL,
-    CONF_SSL,
     CONF_TYPE,
     CONF_USERNAME,
 )
@@ -45,21 +41,6 @@ def altered_config():
         CONF_USERNAME: "new_user",
         CONF_PASSWORD: "new_pwd",
         MQTT_TRANSPORT: "websockets",
-    }
-
-
-@pytest.fixture
-def addon_config():
-    """Fixture for addon configuration."""
-    return {
-        "addon": "Mock Addon",
-        CONF_HOST: "mock-mqtt",
-        CONF_PORT: 1883,
-        CONF_USERNAME: "user",
-        CONF_PASSWORD: "pass",
-        CONF_PROTOCOL: "3.1.1",  # Set by the addon's discovery, ignored by HA
-        MQTT_TRANSPORT: "tcp",
-        CONF_SSL: False,  # Set by the addon's discovery, ignored by HA
     }
 
 
@@ -109,8 +90,6 @@ async def test_user_config_flow_finished_successfully(
         default_config,
     )
 
-    default_config[CONF_DISCOVERY] = True
-
     assert result[CONF_TYPE] == "create_entry"
     assert result["result"].data == default_config
 
@@ -136,7 +115,7 @@ async def test_async_get_options_flow(
 
     # Check if the options were updated correctly
     assert result["type"] == data_entry_flow.RESULT_TYPE_CREATE_ENTRY
-    assert config_entry.data == altered_config
+    assert config_entry.options == altered_config
 
 
 @pytest.mark.parametrize(
@@ -226,8 +205,6 @@ async def test_config_setup(
         default_config,
     )
 
-    default_config[CONF_DISCOVERY] = True
-
     assert result[CONF_TYPE] == "create_entry"
     assert result["result"].data == default_config
 
@@ -267,104 +244,6 @@ async def test_single_instance(hass: HomeAssistant) -> None:
     )
     assert result[CONF_TYPE] == "abort"
     assert result["reason"] == "single_instance_allowed"
-
-
-async def test_hassio_ignored(hass: HomeAssistant) -> None:
-    """Test instance can be ignored."""
-    MockConfigEntry(
-        domain=inels.DOMAIN, source=config_entries.SOURCE_IGNORE
-    ).add_to_hass(hass)
-
-    result = await hass.config_entries.flow.async_init(
-        inels.DOMAIN,
-        data=HassioServiceInfo(
-            config={
-                "addon": "Mosquitto",
-                CONF_HOST: "mock-mosquitto",
-                CONF_PORT: "1883",
-                CONF_PROTOCOL: "3.1.1",
-            },
-            name="Mosquitto",
-            slug="mosquitto",
-            uuid="1234",
-        ),
-        context={"source": config_entries.SOURCE_HASSIO},
-    )
-
-    assert result
-    assert result.get(CONF_TYPE) == data_entry_flow.RESULT_TYPE_ABORT
-    assert result.get("reason") == "already_configured"
-
-
-async def test_hassio_already_configured(hass: HomeAssistant) -> None:
-    """Only one config flow can be set up."""
-    MockConfigEntry(domain=inels.DOMAIN).add_to_hass(hass)
-
-    result = await hass.config_entries.flow.async_init(
-        inels.DOMAIN, context={"source": config_entries.SOURCE_HASSIO}
-    )
-    assert result[CONF_TYPE] == data_entry_flow.RESULT_TYPE_ABORT
-    assert result["reason"] == "already_configured"
-
-
-async def test_hassio_confirm(
-    hass: HomeAssistant, mock_try_connection, mock_is_available, addon_config
-) -> None:
-    """Test we can finish a config flow."""
-    mock_try_connection.return_value = None
-
-    result = await hass.config_entries.flow.async_init(
-        inels.DOMAIN,
-        data=HassioServiceInfo(
-            config=addon_config, name="Mock addon", slug="mock-slug", uuid="1234"
-        ),
-        context={"source": config_entries.SOURCE_HASSIO},
-    )
-    assert result[CONF_TYPE] == "form"
-    assert result["step_id"] == "confirm"
-    assert result["description_placeholders"] == {"addon": "Mock Addon"}
-
-    mock_try_connection.reset_mock()
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"discovery": True}
-    )
-
-    assert result[CONF_TYPE] == "create_entry"
-    assert result["result"].data == {
-        CONF_HOST: "mock-mqtt",
-        CONF_PORT: 1883,
-        CONF_USERNAME: "user",
-        CONF_PASSWORD: "pass",
-        MQTT_TRANSPORT: "tcp",
-        CONF_DISCOVERY: True,
-    }
-    assert len(mock_try_connection.mock_calls) == 1
-    assert len(mock_is_available.mock_calls) == 1
-
-
-async def test_hassio_fail(
-    hass: HomeAssistant, mock_try_connection, addon_config
-) -> None:
-    """Test we can get the error when the connection can not be made."""
-    mock_try_connection.return_value = 6
-
-    result = await hass.config_entries.flow.async_init(
-        inels.DOMAIN,
-        data=HassioServiceInfo(
-            config=addon_config, name="Mock addon", slug="mock-slug", uuid="1234"
-        ),
-        context={"source": config_entries.SOURCE_HASSIO},
-    )
-
-    assert result[CONF_TYPE] == "form"
-    assert result["step_id"] == "confirm"
-    assert result["description_placeholders"] == {"addon": "Mock Addon"}
-
-    result = await hass.config_entries.flow.async_configure(
-        result["flow_id"], {"discovery": True}
-    )
-
-    assert result["errors"]["base"] == "unknown"
 
 
 async def test_try_connection(mock_mqtt_client_test_connection, default_config) -> None:

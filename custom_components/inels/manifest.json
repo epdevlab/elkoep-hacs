@@ -8,19 +8,13 @@
     "@zed4805"
   ],
   "config_flow": true,
-  "dependencies": [
-    "mqtt"
-  ],
   "documentation": "https://github.com/epdevlab/elkoep-hacs",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/epdevlab/elkoep-hacs/issues",
-  "mqtt": [
-    "inels/status/#"
-  ],
   "requirements": [
     "elkoep-mqtt==0.2.33b13"
   ],
-  "version": "0.1.0-b13",
+  "version": "0.1.0-b14",
   "loggers": [
     "custom_components.inels"
   ]

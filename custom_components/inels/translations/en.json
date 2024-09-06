@@ -1,61 +1,50 @@
 {
     "config": {
         "abort": {
-            "already_configured": "Service is already configured",
-            "cannot_connect": "Failed to connect",
-            "forbidden_id": "Forbidden mqtt client id",
-            "invalid_auth": "Invalid authentication details",
-            "mqtt_version": "Incorrect broker MQTT version",
-            "no_devices_found": "No devices were found.",
-            "single_instance_allowed": "Already configured. Only a single configuration possible.",
-            "unauthorized": "Unauthorized connection",
-            "unknown": "Unknown error"
+            "single_instance_allowed": "Already configured. Only a single configuration possible."
         },
         "error": {
-            "cannot_connect": "Failed to connect"
+            "cannot_connect": "Failed to connect",
+            "forbidden_id": "Forbidden MQTT client id",
+            "invalid_auth": "Invalid authentication",
+            "mqtt_version": "Incorrect broker MQTT version",
+            "unauthorized": "Unauthorized connection",
+            "unknown": "Unexpected error"
         },
         "step": {
             "setup": {
                 "data": {
-                    "discovery": "Enable discovery",
                     "host": "Broker",
                     "port": "Port",
                     "username": "User name",
-                    "password": "Password"
+                    "password": "Password",
+                    "transport": "Transport protocol"
                 },
-                "description": "Please connect your MQTT broker to load iNELS components.",
-                "title": "iNELS MQTT broker"
-            },
-            "confirm": {
-                "data": {
-                    "discovery": "Enable discovery"
-                },
-                "description": "Do you want to configure Home Assistant to connect to the MQTT broker by the add-on {addon}?",
-                "title": "MQTT broker via add-on"
+                "title": "iNELS MQTT broker",
+                "description": "Please enter the MQTT broker details to connect iNELS components."
             }
         }
     },
     "options": {
         "error": {
             "cannot_connect": "Failed to connect",
-            "forbidden_id": "Forbidden mqtt client id",
-            "invalid_auth": "Invalid authentication details",
+            "forbidden_id": "Forbidden MQTT client id",
+            "invalid_auth": "Invalid authentication",
             "mqtt_version": "Incorrect broker MQTT version",
-            "no_devices_found": "No devices were found.",
-            "single_instance_allowed": "Already configured. Only a single configuration possible.",
             "unauthorized": "Unauthorized connection",
-            "unknown": "Unknown error"
+            "unknown": "Unexpected error"
         },
         "step": {
             "setup": {
                 "data": {
                     "host": "Broker",
-                    "password": "Password",
                     "port": "Port",
-                    "username": "User name"
+                    "username": "User name",
+                    "password": "Password",
+                    "transport": "Transport protocol"
                 },
-                "description": "Please enter MQTT broker connection information.",
-                "title": "iNELS MQTT broker options"
+                "title": "iNELS MQTT broker options",
+                "description": "Please enter MQTT broker connection information."
             }
         }
     }
