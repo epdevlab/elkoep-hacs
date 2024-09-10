@@ -14,7 +14,7 @@
   "requirements": [
     "elkoep-mqtt==0.2.33b13"
   ],
-  "version": "0.1.0-b14",
+  "version": "0.1.0-b15",
   "loggers": [
     "custom_components.inels"
   ]
