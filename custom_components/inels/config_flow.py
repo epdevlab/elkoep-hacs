@@ -158,7 +158,7 @@ def try_connection(
         MQTT_TRANSPORT: transport,
     }
     client = InelsMqtt(entry_config)
-    ret = client.test_connection()
+    ret: int | None = client.test_connection()
     client.disconnect()
 
     return ret
