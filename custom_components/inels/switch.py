@@ -77,27 +77,24 @@ async def async_setup_entry(
                         )
                     )
                 else:
-                    for k in range(len(device.state.__dict__[key])):
-                        description = InelsSwitchEntityDescription(
-                            key=f"{key}{k}",
-                            name=f"{type_dict.name} {k+1}",
-                            icon=type_dict.icon,
-                            alerts=getattr(type_dict, "alerts", None),
-                        )
-
-                        if device.inels_type == "BITS":
-                            description.name = (
-                                f"Bit {device.state.__dict__[key][k].addr}"
-                            )
-
-                        entities.append(
+                    entities.extend(
+                        [
                             InelsBusSwitch(
                                 device=device,
                                 key=key,
                                 index=k,
-                                description=description,
+                                description=InelsSwitchEntityDescription(
+                                    key=f"{key}{k}",
+                                    name=f"{type_dict.name} {k+1}"
+                                    if device.inels_type != "BITS"
+                                    else f"Bit {device.state.__dict__[key][k].addr}",
+                                    icon=type_dict.icon,
+                                    alerts=getattr(type_dict, "alerts", None),
+                                ),
                             )
-                        )
+                            for k in range(len(device.state.__dict__[key]))
+                        ]
+                    )
     async_add_entities(entities, False)
 
     if old_entities:
@@ -110,7 +107,7 @@ async def async_setup_entry(
     )
 
 
-@dataclass
+@dataclass(frozen=True)
 class InelsSwitchEntityDescription(SwitchEntityDescription):
     """Class for description inels entities."""
 
@@ -163,8 +160,8 @@ class InelsBusSwitch(InelsBaseEntity, SwitchEntity):
     @property
     def is_on(self) -> bool | None:
         """Return if switch is on."""
-        state = self._device.state
-        return state.__dict__[self.key][self.index].is_on
+        state: bool | None = self._device.state.__dict__[self._key][self._index].is_on
+        return state
 
     @property
     def icon(self) -> str | None:
