@@ -3,11 +3,13 @@
 # pyright: reportMissingImports=false
 try:
     from homeassistant.components import inels
+    from homeassistant.components.inels import config_flow
     from homeassistant.components.inels.const import DOMAIN, OLD_ENTITIES
 
     from tests.common import MockConfigEntry
 except ImportError:
     from custom_components import inels
+    from custom_components.inels import config_flow
     from custom_components.inels.const import DOMAIN, OLD_ENTITIES
     from pytest_homeassistant_custom_component.common import MockConfigEntry
 
@@ -22,6 +24,7 @@ from homeassistant.helpers.entity import Entity
 __all__ = [
     "MockConfigEntry",
     "inels",
+    "config_flow",
     "get_entity",
     "get_entity_id",
     "set_mock_mqtt",

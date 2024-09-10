@@ -17,7 +17,7 @@ from homeassistant.const import (
 from homeassistant.core import HomeAssistant
 
 from . import HA_INELS_PATH
-from .common import MockConfigEntry, inels
+from .common import MockConfigEntry, config_flow, inels
 
 
 @pytest.fixture
@@ -250,12 +250,12 @@ async def test_try_connection(mock_mqtt_client_test_connection, default_config) 
     """Test the try_connection function."""
 
     assert (
-        inels.config_flow.try_connection(None, **default_config) == 6
+        config_flow.try_connection(None, **default_config) == 6
     )  # checks that the correct value is propagated
 
 
 async def test_test_connect_to_error() -> None:
     """Test the test_connect function."""
-    assert inels.config_flow.connect_val_to_error(1) == "mqtt_version"
+    assert config_flow.connect_val_to_error(1) == "mqtt_version"
 
-    assert inels.config_flow.connect_val_to_error(None) == "unknown"
+    assert config_flow.connect_val_to_error(None) == "unknown"
