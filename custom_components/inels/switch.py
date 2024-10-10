@@ -107,7 +107,7 @@ async def async_setup_entry(
     )
 
 
-@dataclass(frozen=True)
+@dataclass
 class InelsSwitchEntityDescription(SwitchEntityDescription):
     """Class for description inels entities."""
 

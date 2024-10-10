@@ -4,7 +4,11 @@ from __future__ import annotations
 
 from inelsmqtt.devices import Device
 
-from homeassistant.helpers.device_registry import DeviceInfo
+try:
+    from homeassistant.helpers.device_registry import DeviceInfo
+except ImportError:
+    from homeassistant.helpers.entity import DeviceInfo
+
 from homeassistant.helpers.entity import Entity
 
 from .const import DOMAIN, LOGGER
