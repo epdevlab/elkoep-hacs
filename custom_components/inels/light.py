@@ -282,7 +282,7 @@ class InelsLight(InelsBaseEntity, LightEntity):
             return
 
         # mount device ha value
-        ha_val = self._device.get_value().ha_value
+        ha_val = self._device.state
         ha_val.__dict__[self.key][self.index].brightness = 0
         await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
 
@@ -291,7 +291,7 @@ class InelsLight(InelsBaseEntity, LightEntity):
         if not self._device:
             return
 
-        ha_val = self._device.get_value().ha_value
+        ha_val = self._device.state
 
         if ATTR_RGB_COLOR in kwargs:
             rgb = kwargs[ATTR_RGB_COLOR]

@@ -86,8 +86,7 @@ async def async_setup_entry(
     entities: list[InelsSelect] = []
 
     for device in device_list:
-        val = device.get_value()
-        if hasattr(val.ha_value, "fan_speed"):
+        if hasattr(device.state, "fan_speed"):
             entities.append(
                 InelsSelect(
                     device,
