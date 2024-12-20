@@ -158,3 +158,18 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
         hass.data.pop(DOMAIN)
 
     return True
+
+
+async def async_remove_config_entry_device(
+    hass: HomeAssistant,
+    config_entry: ConfigEntry,
+    device_entry: dr.DeviceEntry
+) -> bool:
+    """Determine if a device can be removed from a config entry."""
+    inels_data = hass.data[DOMAIN][config_entry.entry_id]
+
+    # Check if the device identifiers intersect with any of the devices in the integration
+    # If there is no intersection, the device is not associated and can be removed
+    return not device_entry.identifiers.intersection(
+        (DOMAIN, d.unique_id) for d in inels_data[DEVICES]
+    )

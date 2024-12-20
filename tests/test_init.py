@@ -136,3 +136,43 @@ async def test_remove_old_entities(hass: HomeAssistant) -> None:
         assert mock_remove_entity.call_count == 2
         mock_remove_entity.assert_any_call("sensor.old_entity_1")
         mock_remove_entity.assert_any_call("light.old_entity_2")
+
+
+async def test_async_remove_config_entry_device(hass: HomeAssistant) -> None:
+    """Test the async_remove_config_entry_device function."""
+    await setup_inels_test_integration(hass)
+
+    config_entry = MockConfigEntry(
+        domain=inels.DOMAIN,
+        data={},
+    )
+    config_entry.add_to_hass(hass)
+
+    hass.data.setdefault(inels.DOMAIN, {})
+    hass.data[inels.DOMAIN][config_entry.entry_id] = {
+        inels.DEVICES: [
+            Mock(unique_id="device_1"),
+        ]
+    }
+
+    device_registry = dr.async_get(hass)
+    device_entry_associated = device_registry.async_get_or_create(
+        config_entry_id=config_entry.entry_id,
+        identifiers={(inels.DOMAIN, "device_1")},
+        name="Associated Device",
+    )
+    device_entry_unassociated = device_registry.async_get_or_create(
+        config_entry_id=config_entry.entry_id,
+        identifiers={(inels.DOMAIN, "device_2")},
+        name="Unassociated Device",
+    )
+
+    can_remove_associated = await inels.async_remove_config_entry_device(
+        hass, config_entry, device_entry_associated
+    )
+    assert not can_remove_associated, "Associated device should not be removable."
+
+    can_remove_unassociated = await inels.async_remove_config_entry_device(
+        hass, config_entry, device_entry_unassociated
+    )
+    assert can_remove_unassociated, "Unassociated device should be removable."
