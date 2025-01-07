@@ -118,6 +118,18 @@ INELS_SENSOR_TYPES: dict[str, InelsSensorType] = {
 }
 
 
+def twos_comp(value: int, num_bytes: int) -> int:
+    num_bits = num_bytes * 8
+
+    sign_bit_mask = 1 << (num_bits - 1)
+    max_value = 1 << num_bits
+
+    if value & sign_bit_mask:
+        return value - max_value  # Convert to negative number
+    else:
+        return value  # Return positive number as is
+
+
 def _process_value(val: str) -> tuple[str, bool]:
     middle_fs = True
     for k in val[1:-1]:
@@ -136,7 +148,7 @@ def _process_value(val: str) -> tuple[str, bool]:
             LOGGER.warning(error)
             return (float(int(val, 16)) / 100, True)
 
-    return (float(int(val, 16)) / 100, False)
+    return (twos_comp(int(val, 16), len(val)//2) / 100., False)
 
 
 @dataclass
