@@ -1,5 +1,5 @@
-paho-mqtt==1.6.1
-pytest-homeassistant-custom-component==0.13.148
+paho-mqtt==2.1.0
+pytest-homeassistant-custom-component==0.13.221
 pytest
 pytest-cov
 pytest-asyncio
