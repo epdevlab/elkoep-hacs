@@ -283,6 +283,7 @@ class InelsLight(InelsBaseEntity, LightEntity):
 
         # mount device ha value
         ha_val = self._device.state
+        ha_val.__dict__[self.key][self.index].brightness_before_off = ha_val.__dict__[self.key][self.index].brightness
         ha_val.__dict__[self.key][self.index].brightness = 0
         await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
 
@@ -322,12 +323,20 @@ class InelsLight(InelsBaseEntity, LightEntity):
         else:
             last_val = self._device.last_values.ha_value
 
-            # uses previously observed brightness value if it isn't 0
-            ha_val.__dict__[self.key][self.index].brightness = (
-                100
-                if last_val is None
-                or last_val.__dict__[self.key][self.index].brightness == 0
-                else last_val.__dict__[self.key][self.index].brightness
-            )
+            # uses previously observed brightness value
+            if self.key == "light_coa_toa":  # since ramp increments are built into events, the last value is never identical to the value before off
+                ha_val.__dict__[self.key][self.index].brightness = (
+                    100
+                    if last_val is None
+                    or last_val.__dict__[self.key][self.index].brightness_before_off in [0, None]
+                    else last_val.__dict__[self.key][self.index].brightness_before_off
+                )
+            else:
+                ha_val.__dict__[self.key][self.index].brightness = (
+                    100
+                    if last_val is None
+                    or last_val.__dict__[self.key][self.index].brightness == 0
+                    else last_val.__dict__[self.key][self.index].brightness
+                )
 
         await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
