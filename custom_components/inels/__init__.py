@@ -165,11 +165,35 @@ async def async_remove_config_entry_device(
     config_entry: ConfigEntry,
     device_entry: dr.DeviceEntry
 ) -> bool:
-    """Determine if a device can be removed from a config entry."""
+    """Always allow device removal and clean up MQTT resources if device exists."""
     inels_data = hass.data[DOMAIN][config_entry.entry_id]
 
-    # Check if the device identifiers intersect with any of the devices in the integration
-    # If there is no intersection, the device is not associated and can be removed
-    return not device_entry.identifiers.intersection(
-        (DOMAIN, d.unique_id) for d in inels_data[DEVICES]
-    )
+    # Find the device in the discovery data
+    for device in inels_data[DEVICES]:
+        if (DOMAIN, device.unique_id) in device_entry.identifiers:
+            mqtt: InelsMqtt = inels_data[BROKER]
+
+            # Unsubscribe from both connected_topic and state_topic
+            await hass.async_add_executor_job(
+                mqtt.unsubscribe,
+                device.connected_topic
+            )
+            await hass.async_add_executor_job(
+                mqtt.unsubscribe,
+                device.state_topic
+            )
+
+            # Clear MQTT topic with empty retained message
+            await hass.async_add_executor_job(
+                lambda: mqtt.publish(device.state_topic, "", retain=True)
+            )
+
+            # Remove from discovery data
+            inels_data[DEVICES] = [d for d in inels_data[DEVICES]
+                                   if d.unique_id != device.unique_id]
+
+            # Device was found and cleaned up, return True to allow removal
+            return True
+
+    # Device not found in our data, so it can be removed
+    return True
