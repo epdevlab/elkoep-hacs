@@ -89,12 +89,22 @@ INELS_LIGHT_TYPES: dict[str, InelsLightType] = {
     "rgbw": InelsLightType(
         name="RGBW light", color_modes=[ColorMode.BRIGHTNESS, ColorMode.RGBW]
     ),
+    "rgbw_channels": InelsLightType(
+        name="RGBW light", color_modes=[ColorMode.BRIGHTNESS]
+    ),
     "warm_light": InelsLightType(
         name="Tunable white light",
         color_modes=[ColorMode.BRIGHTNESS, ColorMode.COLOR_TEMP],
     ),
 }
 
+RGBW_CHANNEL_INFO = [
+   ("r", "red", "mdi:alpha-r-circle"),
+   ("g", "green", "mdi:alpha-g-circle"),
+   ("b", "blue", "mdi:alpha-b-circle"),
+   ("w", "white", "mdi:alpha-w-circle"),
+   ("brightness", "brightness", "mdi:alpha-y-circle"),
+] * 3
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -128,23 +138,41 @@ async def async_setup_entry(
                         )
                     )
                 else:
-                    entities.extend(
-                        [
-                            InelsLight(
-                                device=device,
-                                key=key,
-                                index=k,
-                                description=InelsLightDescription(
-                                    key=f"{key}{k}",
-                                    name=f"{type_dict.name} {k+1}",
-                                    icon=type_dict.icon,
-                                    color_modes=type_dict.color_modes,
-                                    alerts=getattr(type_dict, "alerts", None),
-                                ),
+                    for k in range(len(device.state.__dict__[key])):
+                        if key == "rgbw_channels":
+                            channel_key, channel_name, channel_icon = RGBW_CHANNEL_INFO[k]
+                            entities.append(
+                                InelsRGBWChannelLight(
+                                    device=device,
+                                    key=key,
+                                    index=k,
+                                    channel_key=channel_key,
+                                    channel_name=channel_name,
+                                    description=InelsLightDescription(
+                                        key=f"{key}{k}_{channel_key}",
+                                        name=f"{type_dict.name} {(k//5) + 1} {channel_name}",
+                                        icon=channel_icon,
+                                        color_modes=type_dict.color_modes,
+                                        alerts=None,
+                                    ),
+                                )
                             )
-                            for k in range(len(device.state.__dict__[key]))
-                        ]
-                    )
+                        else:
+                            entities.append(
+                                InelsLight(
+                                    device=device,
+                                    key=key,
+                                    index=k,
+                                    description=InelsLightDescription(
+                                        key=f"{key}{k}",
+                                        name=f"{type_dict.name} {k+1}",
+                                        icon=type_dict.icon,
+                                        color_modes=type_dict.color_modes,
+                                        alerts=getattr(
+                                            type_dict, "alerts", None),
+                                    ),
+                                )
+                            )
 
     async_add_entities(entities, True)
 
@@ -338,5 +366,96 @@ class InelsLight(InelsBaseEntity, LightEntity):
                     or last_val.__dict__[self.key][self.index].brightness == 0
                     else last_val.__dict__[self.key][self.index].brightness
                 )
+
+        await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
+
+
+class InelsRGBWChannelLight(InelsLight):
+    """RGBW Channel Light class for individual channel control."""
+
+    def __init__(
+        self,
+        device: Device,
+        key: str,
+        index: int,
+        channel_key: str,
+        channel_name: str,
+        description: InelsLightDescription,
+    ) -> None:
+        """Initialize an RGBW channel light."""
+        super().__init__(device, key, index, description)
+        self._parent_key = 'rgbw'
+        self._parent_index = index//5
+        self._channel_key = channel_key
+        self._channel_name = channel_name
+
+        # Create unique_id with index and channel info
+        self._attr_unique_id = slugify(f"{device.unique_id}_{key}_{index}_{channel_key}_channel")
+        self.entity_id = f"{Platform.LIGHT}.{self._attr_unique_id}"
+
+        # Set descriptive name
+        self._attr_name = f"{device.title} {description.name}"
+
+        # Add extra state attributes to identify this as a channel
+        self._attr_extra_state_attributes = {
+            "channel_type": channel_key,
+            "channel_index": index,
+            "is_rgbw_channel": True
+        }
+
+    @property
+    def is_on(self) -> bool:
+        """Return true if channel is on."""
+        state = self._device.state.__dict__[self._parent_key][self._parent_index]
+        return getattr(state, self._channel_key, 0) > 0
+
+    @property
+    def brightness(self) -> int | None:
+        """Channel brightness."""
+        state = self._device.state.__dict__[self._parent_key][self._parent_index]
+        channel_value = getattr(state, self._channel_key, 0)
+        return cast(int, channel_value * 2.55)
+
+    @property
+    def color_mode(self) -> ColorMode | str | None:
+        """Return the color mode of the light."""
+        return ColorMode.BRIGHTNESS
+
+    @property
+    def rgb_color(self) -> tuple[int, int, int] | None:
+        """Return None as channels don't have RGB color."""
+        return None
+
+    @property
+    def rgbw_color(self) -> tuple[int, int, int, int] | None:
+        """Return None as channels don't have RGBW color."""
+        return None
+
+    async def async_turn_off(self, **kwargs: Any) -> None:
+        """Turn off the channel."""
+        if not self._device:
+            return
+
+        ha_val = self._device.state
+        setattr(ha_val.__dict__[self._parent_key]
+                [self._parent_index], self._channel_key, 0)
+        await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
+
+    async def async_turn_on(self, **kwargs: Any) -> None:
+        """Turn on the channel."""
+        if not self._device:
+            return
+
+        ha_val = self._device.state
+
+        if ATTR_BRIGHTNESS in kwargs:
+            brightness = int(kwargs[ATTR_BRIGHTNESS] / 2.55)
+            brightness = min(brightness, 100)
+            setattr(ha_val.__dict__[self._parent_key][self._parent_index],
+                    self._channel_key, brightness)
+        else:
+            # Turn on to full brightness if no brightness specified
+            setattr(ha_val.__dict__[self._parent_key]
+                    [self._parent_index], self._channel_key, 100)
 
         await self.hass.async_add_executor_job(self._device.set_ha_value, ha_val)
