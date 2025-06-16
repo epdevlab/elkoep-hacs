@@ -9,8 +9,6 @@ from inelsmqtt.const import Climate_action, Climate_modes
 from inelsmqtt.devices import Device
 
 from homeassistant.components.climate import (
-    STATE_OFF,
-    STATE_ON,
     ClimateEntity,
     ClimateEntityDescription,
     ClimateEntityFeature,
@@ -25,11 +23,6 @@ from homeassistant.util import slugify
 
 from .const import DEFAULT_MAX_TEMP, DEFAULT_MIN_TEMP, DEVICES, DOMAIN, OLD_ENTITIES
 from .entity import InelsBaseEntity
-
-OPERATION_LIST = [
-    STATE_OFF,
-    STATE_ON,
-]
 
 CLIMATE_MODE_TO_HVAC_MODE = {
     Climate_modes.Off: HVACMode.OFF,
