@@ -83,18 +83,14 @@ INELS_LIGHT_TYPES: dict[str, InelsLightType] = {
         color_modes=[ColorMode.BRIGHTNESS],
         alerts=[aout_current],
     ),
-    "rgb": InelsLightType(
-        name="RGB light", color_modes=[ColorMode.BRIGHTNESS, ColorMode.RGB]
-    ),
-    "rgbw": InelsLightType(
-        name="RGBW light", color_modes=[ColorMode.BRIGHTNESS, ColorMode.RGBW]
-    ),
+    "rgb": InelsLightType(name="RGB light", color_modes=[ColorMode.RGB]),
+    "rgbw": InelsLightType(name="RGBW light", color_modes=[ColorMode.RGBW]),
     "rgbw_channels": InelsLightType(
         name="RGBW light", color_modes=[ColorMode.BRIGHTNESS]
     ),
     "warm_light": InelsLightType(
         name="Tunable white light",
-        color_modes=[ColorMode.BRIGHTNESS, ColorMode.COLOR_TEMP],
+        color_modes=[ColorMode.COLOR_TEMP],
     ),
 }
 
@@ -302,6 +298,8 @@ class InelsLight(InelsBaseEntity, LightEntity):
             return ColorMode.RGB
         if hasattr(state, "relative_ct"):
             return ColorMode.COLOR_TEMP
+        if ColorMode.BRIGHTNESS in self._attr_supported_color_modes:
+            return ColorMode.BRIGHTNESS
         return super().color_mode
 
     async def async_turn_off(self, **kwargs: Any) -> None:
