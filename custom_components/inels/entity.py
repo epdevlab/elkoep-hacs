@@ -27,6 +27,7 @@ class InelsBaseEntity(Entity):
         self._device: Device = device
         self._device_id = self._device.unique_id
         self._attr_name = self._device.title
+        self._removed = False
 
         self._parent_id = self._device.parent_id
         self._attr_unique_id = self._device_id  # f"{self._parent_id}-{self._device_id}"
@@ -42,20 +43,34 @@ class InelsBaseEntity(Entity):
             self._device.state_topic, self._device.unique_id, self._device.callback
         )
 
-        self.async_on_remove(lambda: LOGGER.info("Entity %s to be removed", self.name))
+        def _on_remove() -> None:
+            # Prevent state writes from late callbacks after entity teardown.
+            self._removed = True
+            LOGGER.info("Entity %s to be removed", self.name)
+
+        self.async_on_remove(_on_remove)
 
     def _callback(self) -> None:
         """Get data from broker into the HA."""
-        if hasattr(self, "hass"):
-            try:
-                self.schedule_update_ha_state()
-            except Exception as e:  # noqa: BLE001
-                LOGGER.error(
-                    "Error scheduling HA state update for DT_%s, %s, %s",
-                    self._device.device_class,
-                    self._device.info_serialized(),
-                    e,
-                )
+        if self._removed:
+            return
+
+        hass = getattr(self, "hass", None)
+        loop = getattr(hass, "loop", None) if hass is not None else None
+        if loop is None or not loop.is_running():
+            return
+
+        try:
+            # Paho-MQTT calls callbacks from its own network thread. Marshal the
+            # state write onto the HA event loop thread.
+            loop.call_soon_threadsafe(self.async_write_ha_state)
+        except Exception as e:  # noqa: BLE001
+            LOGGER.error(
+                "Error scheduling HA state update for DT_%s, %s, %s",
+                self._device.device_class,
+                self._device.info_serialized(),
+                e,
+            )
 
     @property
     def should_poll(self) -> bool:
