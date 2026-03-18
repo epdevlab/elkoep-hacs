@@ -60,14 +60,6 @@ async def async_remove_devices_with_no_entities(
             device_registry.async_remove_device(device_id=device_id)
 
 
-async def _async_config_entry_updated(hass: HomeAssistant, entry: ConfigEntry) -> None:
-    """Call when config entry being updated."""
-
-    client: InelsMqtt = hass.data[BROKER]
-
-    await hass.async_add_executor_job(client.disconnect)
-
-
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Set up iNELS from a config entry."""
     if CONF_HOST not in entry.data:
@@ -148,7 +140,8 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     broker: InelsMqtt = hass_data[BROKER]
 
     broker.unsubscribe_listeners()
-    broker.disconnect()
+    # Run blocking MQTT disconnect in executor so DISCONNECT is sent before cleanup.
+    await hass.async_add_executor_job(broker.disconnect)
 
     unload_ok = await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
     if unload_ok:
