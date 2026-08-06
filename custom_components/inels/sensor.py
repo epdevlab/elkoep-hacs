@@ -145,7 +145,7 @@ def _process_value(val: str) -> tuple[str, bool]:
         last = int(last, 16)
         error = BUS_SENSOR_ERRORS.get(last)
         if error is not None:
-            LOGGER.warning(error)
+            LOGGER.debug(error)
             return (float(int(val, 16)) / 100, True)
 
     return (twos_comp(int(val, 16), len(val)//2) / 100., False)
